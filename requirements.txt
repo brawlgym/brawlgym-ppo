@@ -1,4 +1,4 @@
-brawlgym
+brawlgym>=0.1.0
 numpy>1.21, <2.0
 torch>1.13
 wandb>0.15

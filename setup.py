@@ -18,7 +18,7 @@ setup(
     author='chrisrca',
     url='https://github.com/chrisrca/brawlgym-ppo',
     install_requires=[
-        'brawlgym',
+        'brawlgym>=0.1.0',
         'numpy>1.21',
         'torch>1.13',
         'wandb>0.15',
