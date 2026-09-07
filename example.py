@@ -49,7 +49,10 @@ def build_brawlgym_env(port):
                         obs_builder=obs_builder,
                         action_parser=action_parser,
                         state_setter=state_setter,
-                        port=port)
+                        port=port,
+                        auto_mute=True,
+                        auto_minimize=True,
+                        game_speed=0)
 
     return env
 
@@ -67,6 +70,8 @@ if __name__ == "__main__":
     learner = Learner(build_brawlgym_env,
                       n_proc=n_proc,
                       n_players=2,
+                      minimize_game_windows=True,
+                      mute_game_audio=True,
                       min_inference_size=min_inference_size,
                       metrics_logger=metrics_logger,
                       ppo_batch_size=50000,
