@@ -381,8 +381,9 @@ class BatchedAgentManager(object):
     def _get_env_shapes(self):
         """
         Retrieve environment observation and action space shapes from one of the connected environment processes.
-        :return: A tuple containing observation shape, action shape, action space type and the bins per action
-                 (empty unless the action space is multi-discrete).
+        :return: A tuple containing observation shape, action shape, action space type, the bins per action
+                 (empty unless the action space is multi-discrete), the reward component names and the
+                 discrete action names.
         """
         process, parent_end, child_endpoint, shm_view = self.processes[0]
         request_msg = comm_consts.pack_message(comm_consts.ENV_SHAPES_HEADER)
@@ -403,7 +404,12 @@ class BatchedAgentManager(object):
                 action_bins = [int(arg) for arg in data[3:]]
                 done = True
 
-        return int(obs_shape), int(action_shape), int(action_space_type), action_bins
+        reward_names, action_names = [], []
+        tag, *payload = pickle.loads(parent_end.recv(PACKET_MAX_SIZE))
+        if tag == "metric_names":
+            reward_names, action_names = list(payload[0]), list(payload[1])
+
+        return int(obs_shape), int(action_shape), int(action_space_type), action_bins, reward_names, action_names
 
     def init_processes(
         self,
@@ -420,7 +426,8 @@ class BatchedAgentManager(object):
         :param ports: Bridge port of the game instance each process will drive, one per process.
         :param collect_metrics_fn: A user-defined function that the environment processes will use to collect metrics
                about the environment at each timestep.
-        :return: A tuple containing observation shape, action shape, action space type and bins per action.
+        :return: A tuple containing observation shape, action shape, action space type, bins per action and
+                 reward component names.
         """
         assert len(ports) == n_processes, "ONE GAME PORT IS REQUIRED PER PROCESS"
 

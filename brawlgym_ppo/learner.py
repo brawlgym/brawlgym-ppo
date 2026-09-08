@@ -61,6 +61,7 @@ class Learner(object):
             ppo_minibatch_size: Union[int, None] = None,
             ppo_ent_coef: float = 0.005,
             ppo_clip_range: float = 0.2,
+            ppo_normalize_advantages: bool = True,
 
             gae_lambda: float = 0.95,
             gae_gamma: float = 0.99,
@@ -154,7 +155,8 @@ class Learner(object):
             standardize_obs=standardize_obs,
             steps_per_obs_stats_increment=steps_per_obs_stats_increment
         )
-        obs_space_size, act_space_size, action_space_type, action_bins = self.agent.init_processes(
+        obs_space_size, act_space_size, action_space_type, action_bins, self.reward_names, self.action_names = \
+            self.agent.init_processes(
             n_processes=n_proc,
             build_env_fn=env_create_function,
             ports=self.instance_ports,
@@ -182,6 +184,7 @@ class Learner(object):
             clip_range=ppo_clip_range,
             ent_coef=ppo_ent_coef,
             action_bins=action_bins,
+            normalize_advantages=ppo_normalize_advantages,
         )
 
         self.agent.policy = self.ppo_learner.policy
@@ -203,6 +206,7 @@ class Learner(object):
             "ppo_minibatch_size": ppo_minibatch_size,
             "ppo_ent_coef": ppo_ent_coef,
             "ppo_clip_range": ppo_clip_range,
+            "ppo_normalize_advantages": ppo_normalize_advantages,
             "gae_lambda": gae_lambda,
             "gae_gamma": gae_gamma,
             "policy_lr": policy_lr,
@@ -280,8 +284,23 @@ class Learner(object):
                 self.ts_per_epoch
             )
 
+            # every step's metrics start with the per-component rewards, then the action frequencies
+            n_rew, n_act = len(self.reward_names), len(self.action_names)
+            reward_report = {}
+            if collected_metrics and (n_rew or n_act):
+                means = np.stack([m[:n_rew + n_act] for m in collected_metrics]).mean(axis=0)
+                for name, value in zip(self.reward_names, means[:n_rew]):
+                    reward_report["Reward/" + name] = float(value)
+                if n_rew:
+                    reward_report["Reward/Total"] = float(means[:n_rew].sum())
+                for name, value in zip(self.action_names, means[n_rew:]):
+                    reward_report["Action/" + name] = float(value)
+                if n_act:
+                    attack = [i for i, n in enumerate(self.action_names) if "light" in n or "heavy" in n]
+                    reward_report["Action/attacks"] = float(means[n_rew:][attack].sum())
             if self.metrics_logger is not None:
-                self.metrics_logger.report_metrics(collected_metrics, self.wandb_run, self.agent.cumulative_timesteps)
+                self.metrics_logger.report_metrics([m[n_rew + n_act:] for m in collected_metrics], self.wandb_run,
+                                                   self.agent.cumulative_timesteps)
 
             # Add the new experience to our buffer and compute the various
             # reinforcement learning quantities we need to
@@ -298,6 +317,7 @@ class Learner(object):
             if self.epoch < 1:
                 report["Value Function Loss"] = np.nan
 
+            report.update(reward_report)
             report["Cumulative Timesteps"] = self.agent.cumulative_timesteps
             report["Total Iteration Time"] = epoch_time
             report["Timesteps Collected"] = steps_collected

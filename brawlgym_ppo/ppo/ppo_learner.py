@@ -25,8 +25,10 @@ class PPOLearner(object):
         mini_batch_size,
         device,
         action_bins=None,
+        normalize_advantages=True,
     ):
         self.device = device
+        self.normalize_advantages = normalize_advantages
 
         assert (
             batch_size % mini_batch_size == 0
@@ -140,6 +142,10 @@ class PPOLearner(object):
                     acts = batch_acts[start:stop].to(self.device)
                     obs = batch_obs[start:stop].to(self.device)
                     advantages = batch_advantages[start:stop].to(self.device)
+                    if self.normalize_advantages:
+                        # unit-scale advantages so the entropy bonus means the same thing whatever the
+                        # reward scale
+                        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
                     old_probs = batch_old_probs[start:stop].to(self.device)
                     target_values = batch_target_values[start:stop].to(self.device)
 

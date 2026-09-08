@@ -124,12 +124,12 @@ def batched_agent_process(proc_id, endpoint, shm_buffer, shm_offset, shm_size, s
                 done = 1.0 if done else 0.0
                 truncated = 1.0 if truncated else 0.0
 
+                # per-component rewards and action frequencies lead the metrics payload; user metrics follow
+                metrics = np.concatenate([np.asarray(info["reward_components"], dtype=np.float32).reshape(-1),
+                                          np.asarray(info["action_frequencies"], dtype=np.float32).reshape(-1)])
                 if metrics_encoding_function is not None:
-                    metrics = metrics_encoding_function(info["state"])
-                    metrics_shape = [float(arg) for arg in metrics.shape]
-                else:
-                    metrics = np.empty(shape=(0,))
-                    metrics_shape = []
+                    metrics = np.concatenate([metrics, metrics_encoding_function(info["state"]).reshape(-1)])
+                metrics_shape = [float(arg) for arg in metrics.shape]
 
                 if shm_view is None or shm_shapes != (prev_n_agents, n_agents):
                     shm_shapes = (prev_n_agents, n_agents)
@@ -164,6 +164,7 @@ def batched_agent_process(proc_id, endpoint, shm_buffer, shm_offset, shm_size, s
                     float(env.action_space_type),
                 ] + [float(b) for b in env.bins]
                 pipe.sendto(comm_consts.pack_message(message_floats), endpoint)
+                pipe.sendto(pickle.dumps(("metric_names", list(env.reward_names), list(env.action_names))), endpoint)
 
             elif header[0] == STOP_MESSAGE_HEADER[0]:
                 break

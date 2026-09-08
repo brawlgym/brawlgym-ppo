@@ -44,6 +44,13 @@ def _form_printable_groups(report):
         {"Timesteps Collected": report["Timesteps Collected"]},
               ]
 
+    # per-component reward means for the iteration (one entry per reward in the CombinedReward)
+    reward_group = {key: val for key, val in report.items() if key.startswith("Reward/")}
+    if "Action/attacks" in report:
+        reward_group["Action/attacks"] = report["Action/attacks"]
+    if reward_group:
+        groups.insert(1, reward_group)
+
     return groups
 
 def report_metrics(loggable_metrics, debug_metrics, wandb_run=None):

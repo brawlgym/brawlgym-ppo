@@ -24,7 +24,7 @@ class ExampleLogger(MetricsLogger):
 
 def build_brawlgym_env(port):
     import brawlgym
-    from brawlgym.utils.reward_functions import DamageDealtReward
+    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, GroundedPenalty, KOReward, VelocityReward, WhiffPenalty
     from brawlgym.utils.obs_builders import DefaultObs
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
@@ -38,7 +38,16 @@ def build_brawlgym_env(port):
 
     action_parser = LookupAction()
     terminal_conditions = [TeamWipeCondition(), TimeoutCondition(timeout_steps)]
-    reward_fn = DamageDealtReward()
+    rewards_to_combine = (DamageDealtReward(),
+                          DamageTakenPenalty(),
+                          KOReward(ko_reward=30.0, death_penalty=30.0),
+                          WhiffPenalty(penalty=1.0),
+                          ComboReward(link_reward=5.0, max_gap=15),
+                          VelocityReward(),
+                          GroundedPenalty())
+    reward_weights = (1.0, 0.5, 1.0, 1.0, 1.0, 0.002, 0.0005)
+
+    reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
     state_setter = RandomStateSetter()
 
@@ -78,11 +87,11 @@ if __name__ == "__main__":
                       ts_per_iteration=50000,
                       exp_buffer_size=150000,
                       ppo_minibatch_size=50000,
-                      ppo_ent_coef=0.001,
-                      ppo_epochs=1,
+                      ppo_ent_coef=0.005,
+                      ppo_epochs=3,
                       standardize_returns=True,
                       standardize_obs=False,
                       save_every_ts=100_000,
                       timestep_limit=1_000_000_000,
-                      log_to_wandb=False)
+                      log_to_wandb=True)
     learner.learn()
