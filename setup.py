@@ -16,7 +16,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='chrisrca',
-    url='https://github.com/chrisrca/brawlgym-ppo',
+    url='https://github.com/brawlgym/brawlgym-ppo',
     install_requires=[
         'brawlgym>=0.1.0',
         'numpy>1.21',
