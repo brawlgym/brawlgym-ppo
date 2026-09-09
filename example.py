@@ -28,7 +28,7 @@ def build_brawlgym_env(port):
     from brawlgym.utils.obs_builders import DefaultObs
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
-    from brawlgym.utils.state_setters import RandomStateSetter
+    from brawlgym.utils.state_setters import RandomStateSetter, ArmedStateSetter
 
     n_players = 2
     game_fps = 60
@@ -49,7 +49,7 @@ def build_brawlgym_env(port):
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
-    state_setter = RandomStateSetter()
+    state_setter = ArmedStateSetter(RandomStateSetter(), arm_chance=0.75)
 
     env = brawlgym.make(tick_skip=tick_skip,
                         n_players=n_players,
