@@ -40,12 +40,12 @@ def build_brawlgym_env(port):
     terminal_conditions = [TeamWipeCondition(), TimeoutCondition(timeout_steps)]
     rewards_to_combine = (DamageDealtReward(),
                           DamageTakenPenalty(),
-                          KOReward(ko_reward=30.0, death_penalty=30.0),
-                          WhiffPenalty(penalty=1.0),
+                          KOReward(ko_reward=100.0, death_penalty=100.0),
+                          WhiffPenalty(penalty=3.0),
                           ComboReward(link_reward=5.0, max_gap=15),
                           VelocityReward(),
                           GroundedPenalty())
-    reward_weights = (1.0, 0.5, 1.0, 1.0, 1.0, 0.002, 0.0005)
+    reward_weights = (1.0, 1.0, 1.0, 1.0, 1.0, 0.005, 0.00025)
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
@@ -53,6 +53,7 @@ def build_brawlgym_env(port):
 
     env = brawlgym.make(tick_skip=tick_skip,
                         n_players=n_players,
+                        legends=("Mordex", "Nix"),
                         terminal_conditions=terminal_conditions,
                         reward_function=reward_fn,
                         obs_builder=obs_builder,
@@ -83,6 +84,10 @@ if __name__ == "__main__":
                       mute_game_audio=True,
                       min_inference_size=min_inference_size,
                       metrics_logger=metrics_logger,
+                      policy_layer_sizes=(1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024),
+                      critic_layer_sizes=(1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024),
+                      policy_lr=2e-4,
+                      critic_lr=2e-4,
                       ppo_batch_size=50000,
                       ts_per_iteration=50000,
                       exp_buffer_size=150000,
@@ -91,7 +96,7 @@ if __name__ == "__main__":
                       ppo_epochs=3,
                       standardize_returns=True,
                       standardize_obs=False,
-                      save_every_ts=100_000,
+                      save_every_ts=5_000_000,
                       timestep_limit=1_000_000_000,
                       log_to_wandb=True)
     learner.learn()
