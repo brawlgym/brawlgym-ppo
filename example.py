@@ -60,8 +60,6 @@ def build_brawlgym_env(port):
                         action_parser=action_parser,
                         state_setter=state_setter,
                         port=port,
-                        auto_mute=True,
-                        auto_minimize=True,
                         game_speed=0)
 
     return env
@@ -79,13 +77,12 @@ if __name__ == "__main__":
 
     learner = Learner(build_brawlgym_env,
                       n_proc=n_proc,
-                      n_players=2,
                       minimize_game_windows=True,
                       mute_game_audio=True,
                       min_inference_size=min_inference_size,
                       metrics_logger=metrics_logger,
-                      policy_layer_sizes=(1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024),
-                      critic_layer_sizes=(1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024),
+                      policy_layer_sizes=(1024, 1024, 1024, 1024),
+                      critic_layer_sizes=(1024, 1024, 1024, 1024),
                       policy_lr=2e-4,
                       critic_lr=2e-4,
                       ppo_batch_size=50000,
@@ -93,7 +90,7 @@ if __name__ == "__main__":
                       exp_buffer_size=150000,
                       ppo_minibatch_size=50000,
                       ppo_ent_coef=0.005,
-                      ppo_epochs=3,
+                      ppo_epochs=5,
                       standardize_returns=True,
                       standardize_obs=False,
                       save_every_ts=5_000_000,
