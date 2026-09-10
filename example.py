@@ -32,7 +32,7 @@ def build_brawlgym_env(port):
 
     n_players = 2
     game_fps = 60
-    tick_skip = 1
+    tick_skip = 4
     timeout_seconds = 60
     timeout_steps = int(round(timeout_seconds * game_fps / tick_skip))
 
