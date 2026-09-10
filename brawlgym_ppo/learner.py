@@ -36,7 +36,8 @@ class Learner(object):
             n_proc: int = 4,
             min_inference_size: int = 80,
 
-            map_name: Union[str, None] = None, # TODO: remove or only include here can't be in both learner and env create fn
+            map_name: Union[str, None] = None,
+
             base_port: int = DEFAULT_BASE_PORT,
             instance_ports: Union[Sequence[int], None] = None,
             inject_game: bool = True,

@@ -77,6 +77,7 @@ if __name__ == "__main__":
 
     learner = Learner(build_brawlgym_env,
                       n_proc=n_proc,
+                      map_name="SmallBrawlhaven",
                       minimize_game_windows=True,
                       mute_game_audio=True,
                       min_inference_size=min_inference_size,
