@@ -16,8 +16,8 @@ class ExampleLogger(MetricsLogger):
             avg_dead += np.mean(metric_array[1])
         avg_damage /= len(collected_metrics)
         avg_dead /= len(collected_metrics)
-        report = {"avg_damage": avg_damage,
-                  "avg_dead": avg_dead,
+        report = {"Average Damage": avg_damage,
+                  "Average Dead": avg_dead,
                   "Cumulative Timesteps": cumulative_timesteps}
         wandb_run.log(report)
 
@@ -50,11 +50,11 @@ def build_brawlgym_env(port):
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
-    state_setter = ArmedStateSetter(RandomStateSetter(), arm_chance=0.75)
+    state_setter = ArmedStateSetter(RandomStateSetter(anywhere=True), arm_chance=0.75)
 
     env = brawlgym.make(tick_skip=tick_skip,
                         n_players=n_players,
-                        legends=("Mordex", "Nix"),
+                        legends=("Mordex", "Rayman"),
                         terminal_conditions=terminal_conditions,
                         reward_function=reward_fn,
                         obs_builder=obs_builder,
