@@ -517,7 +517,7 @@ class Learner(object):
                         continue
 
                     if full_path.startswith(base_save_folder):
-                        unix_start_idx = full_path.rfind('-') + 1
+                        unix_start_idx = filename.rfind('-') + 1
                         if unix_start_idx > 0:
                             unix_time_str = filename[unix_start_idx:]
                             if unix_time_str.isdigit():
