@@ -13,7 +13,7 @@ import os
 import random
 import shutil
 import time
-from typing import Sequence, Union, Tuple
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -36,8 +36,8 @@ class Learner(object):
             n_proc: int = 4,
             min_inference_size: int = 80,
 
-            n_players: int = 2,
             map_name: Union[str, None] = None,
+
             base_port: int = DEFAULT_BASE_PORT,
             instance_ports: Union[Sequence[int], None] = None,
             inject_game: bool = True,
@@ -139,7 +139,6 @@ class Learner(object):
                 brawlgym.inject()
             instance_ports = launch_instances(n_proc,
                                               base_port=base_port,
-                                              players=n_players,
                                               map_name=map_name,
                                               auto_minimize=minimize_game_windows,
                                               auto_mute=mute_game_audio)
@@ -192,7 +191,6 @@ class Learner(object):
         self.config = {
             "n_proc": n_proc,
             "min_inference_size": min_inference_size,
-            "n_players": n_players,
             "map_name": map_name,
             "timestep_limit": timestep_limit,
             "exp_buffer_size": exp_buffer_size,

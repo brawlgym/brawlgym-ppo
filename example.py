@@ -16,15 +16,15 @@ class ExampleLogger(MetricsLogger):
             avg_dead += np.mean(metric_array[1])
         avg_damage /= len(collected_metrics)
         avg_dead /= len(collected_metrics)
-        report = {"avg_damage": avg_damage,
-                  "avg_dead": avg_dead,
+        report = {"Average Damage": avg_damage,
+                  "Average Dead": avg_dead,
                   "Cumulative Timesteps": cumulative_timesteps}
         wandb_run.log(report)
 
 
 def build_brawlgym_env(port):
     import brawlgym
-    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, GroundedPenalty, KOReward, VelocityReward, WhiffPenalty
+    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, KOReward, ThrowPenalty, VelocityReward, WhiffPenalty
     from brawlgym.utils.obs_builders import DefaultObs
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
@@ -38,29 +38,29 @@ def build_brawlgym_env(port):
 
     action_parser = LookupAction()
     terminal_conditions = [TeamWipeCondition(), TimeoutCondition(timeout_steps)]
-    rewards_to_combine = (DamageDealtReward(),
+    rewards_to_combine = (DamageDealtReward(repeat_move_scale=0.5,
+                                           heavy_without_light_scale=0.75),
                           DamageTakenPenalty(),
-                          KOReward(ko_reward=30.0, death_penalty=30.0),
-                          WhiffPenalty(penalty=1.0),
+                          KOReward(ko_reward=100.0, death_penalty=100.0),
+                          WhiffPenalty(penalty=6.0, heavy_without_light_scale=1.5),
                           ComboReward(link_reward=5.0, max_gap=15),
-                          VelocityReward(),
-                          GroundedPenalty())
-    reward_weights = (1.0, 0.5, 1.0, 1.0, 1.0, 0.002, 0.0005)
+                          ThrowPenalty(penalty=3.0),
+                          VelocityReward())
+    reward_weights = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.01)
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
-    state_setter = ArmedStateSetter(RandomStateSetter(), arm_chance=0.75)
+    state_setter = ArmedStateSetter(RandomStateSetter(anywhere=True), arm_chance=0.75)
 
     env = brawlgym.make(tick_skip=tick_skip,
                         n_players=n_players,
+                        legends=("Mordex", "Rayman"),
                         terminal_conditions=terminal_conditions,
                         reward_function=reward_fn,
                         obs_builder=obs_builder,
                         action_parser=action_parser,
                         state_setter=state_setter,
                         port=port,
-                        auto_mute=True,
-                        auto_minimize=True,
                         game_speed=0)
 
     return env
@@ -78,20 +78,24 @@ if __name__ == "__main__":
 
     learner = Learner(build_brawlgym_env,
                       n_proc=n_proc,
-                      n_players=2,
+                      map_name="SmallBrawlhaven",
                       minimize_game_windows=True,
                       mute_game_audio=True,
                       min_inference_size=min_inference_size,
                       metrics_logger=metrics_logger,
+                      policy_layer_sizes=(1024, 1024, 1024, 1024),
+                      critic_layer_sizes=(1024, 1024, 1024, 1024),
+                      policy_lr=2e-4,
+                      critic_lr=2e-4,
                       ppo_batch_size=50000,
                       ts_per_iteration=50000,
                       exp_buffer_size=150000,
                       ppo_minibatch_size=50000,
                       ppo_ent_coef=0.005,
-                      ppo_epochs=3,
+                      ppo_epochs=5,
                       standardize_returns=True,
                       standardize_obs=False,
-                      save_every_ts=100_000,
+                      save_every_ts=5_000_000,
                       timestep_limit=1_000_000_000,
                       log_to_wandb=True)
     learner.learn()
