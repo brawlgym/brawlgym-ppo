@@ -24,7 +24,7 @@ class ExampleLogger(MetricsLogger):
 
 def build_brawlgym_env(port):
     import brawlgym
-    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, KOReward, ThrowPenalty, WhiffPenalty
+    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, KOReward, ThrowPenalty, TimeoutPenalty, WhiffPenalty
     from brawlgym.utils.obs_builders import DefaultObs
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
@@ -42,14 +42,15 @@ def build_brawlgym_env(port):
                                            heavy_without_light_scale=0.75),
                           DamageTakenPenalty(),
                           KOReward(ko_reward=100.0, death_penalty=100.0),
-                          WhiffPenalty(penalty=1.0, heavy_without_light_scale=1.5),
+                          WhiffPenalty(penalty=3.8, heavy_without_light_scale=1.5),
                           ComboReward(link_reward=5.0, max_gap=15),
-                          ThrowPenalty(penalty=3.0))
-    reward_weights = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+                          ThrowPenalty(penalty=3.0),
+                          TimeoutPenalty(timeout_steps, penalty=50.0))
+    reward_weights = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
-    state_setter = ArmedStateSetter(RandomStateSetter(anywhere=True), arm_chance=0.75)
+    state_setter = ArmedStateSetter(RandomStateSetter(anywhere=True, below_stage=False), arm_chance=0.75)
 
     env = brawlgym.make(tick_skip=tick_skip,
                         n_players=n_players,
