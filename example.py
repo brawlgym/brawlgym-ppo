@@ -29,6 +29,9 @@ def build_brawlgym_env(port):
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
     from brawlgym.utils.state_setters import RandomStateSetter, ArmedStateSetter
+    from brawlgym.utils.agents import BuiltInAgent
+    from brawlgym.utils.common_values import BOT_EASY, BOT_MEDIUM, BOT_HARD, BOT_EXTREME, BOT_CHOSEN
+    from brawlgym_ppo.util import BrawlgymWrapper
 
     n_players = 2
     game_fps = 60
@@ -61,7 +64,13 @@ def build_brawlgym_env(port):
                         port=port,
                         game_speed=0)
 
-    return env
+    pretrained_agents = {BuiltInAgent(BOT_EASY): 0.05,
+                         BuiltInAgent(BOT_MEDIUM): 0.05,
+                         BuiltInAgent(BOT_HARD): 0.05,
+                         BuiltInAgent(BOT_EXTREME): 0.05,
+                         BuiltInAgent(BOT_CHOSEN): 0.05}
+
+    return BrawlgymWrapper(env, pretrained_agents=pretrained_agents)
 
 
 if __name__ == "__main__":
