@@ -24,7 +24,7 @@ class ExampleLogger(MetricsLogger):
 
 def build_brawlgym_env(port):
     import brawlgym
-    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, DamageDealtReward, DamageTakenPenalty, KOReward, ThrowPenalty, TimeoutPenalty, WhiffPenalty
+    from brawlgym.utils.reward_functions import CombinedReward, ComboReward, ConstantReward, DamageDealtReward, DamageTakenPenalty, KOReward, ThrowPenalty
     from brawlgym.utils.obs_builders import DefaultObs
     from brawlgym.utils.terminal_conditions import TeamWipeCondition, TimeoutCondition
     from brawlgym.utils.action_parsers import LookupAction
@@ -38,15 +38,13 @@ def build_brawlgym_env(port):
 
     action_parser = LookupAction()
     terminal_conditions = [TeamWipeCondition(), TimeoutCondition(timeout_steps)]
-    rewards_to_combine = (DamageDealtReward(repeat_move_scale=0.5,
-                                           heavy_without_light_scale=0.75),
-                          DamageTakenPenalty(),
+    rewards_to_combine = (DamageDealtReward(),
+                          DamageTakenPenalty(counterhit_scale=2.0),
                           KOReward(ko_reward=100.0, death_penalty=100.0),
-                          WhiffPenalty(penalty=3.8, heavy_without_light_scale=1.5),
                           ComboReward(link_reward=5.0, max_gap=15),
                           ThrowPenalty(penalty=3.0),
-                          TimeoutPenalty(timeout_steps, penalty=50.0))
-    reward_weights = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+                          ConstantReward(-0.005))
+    reward_weights = (1.0, 0.5, 1.0, 1.0, 1.0, 1.0)
 
     reward_fn = CombinedReward(rewards_to_combine, reward_weights)
     obs_builder = DefaultObs()
