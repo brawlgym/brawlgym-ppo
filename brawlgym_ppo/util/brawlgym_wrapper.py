@@ -6,6 +6,8 @@ from brawlgym.utils.action_parsers import DefaultAction, LookupAction
 from brawlgym.utils.common_values import BOT_OFF
 from brawlgym.utils.reward_functions import CombinedReward
 
+from .reporting import boxed_table
+
 DISCRETE = 0
 MULTI_DISCRETE = 1
 CONTINUOUS = 2
@@ -25,18 +27,21 @@ class BrawlgymWrapper(object):
     :param pretrained_agents: {agent: probability}, the chance each individual fighter is given to
                               that agent. Probabilities are drawn per fighter and cumulative, so
                               they should sum to less than 1.
+    :param show_lineup: print who is holding each fighter whenever that changes between episodes.
     """
 
     def __init__(self, match, connect_timeout=300.0, pretrained_agents=None,
-                 keep_learning=1, rng=None):
+                 keep_learning=1, rng=None, show_lineup=True):
         self.match = match
         self.match.connect(connect_timeout)
         self.obs_shape = None
         self.pretrained_agents = dict(pretrained_agents or {})
         self.keep_learning = int(keep_learning)
         self.rng = rng or random.Random()
+        self.show_lineup = bool(show_lineup)
         self.occupants = []          # per fighter: None for the learning policy, else the agent
         self.learning = []           # fighter indices the learner still owns
+        self._shown = None           # the lineup last printed, so an unchanged one stays quiet
         self.reward_names = self._reward_names(match.reward_function)
         self.action_names = []
 
@@ -128,6 +133,24 @@ class BrawlgymWrapper(object):
         for i, occ in enumerate(self.occupants):
             if occ is not None:
                 occ.take_over(self.match, i)
+        if self.show_lineup:
+            self._print_lineup()
+
+    def _print_lineup(self):
+        """
+        Who is holding each fighter this episode. Printed only when it differs from the last one,
+        so a run full of workers stays readable and every line means something changed.
+        """
+        names = tuple("Learner" if occ is None else repr(occ) for occ in self.occupants)
+        if names == self._shown:
+            return
+        self._shown = names
+        players = self.match._state.players
+        rows = [[i, names[i], players[i].legend or "?", players[i].team]
+                for i in range(len(names))]
+        print("ROLLOUT on port %d\n%s"
+              % (self.match.port, boxed_table(["Fighter", "Controller", "Legend", "Team"], rows)),
+              flush=True)
 
     def reset(self):
         obs = np.asarray(self.match.reset(), dtype=np.float32)
@@ -140,19 +163,23 @@ class BrawlgymWrapper(object):
         """
         Widen the learner's actions back out to one per fighter, asking each pretrained opponent
         for its own. An opponent driven inside the game answers None and gets the idle action.
+
+        Every slot keeps the shape the learner sends, so a scalar an agent returns is broadcast
+        into it rather than left as a ragged row.
         """
         if not self.occupants or len(self.learning) == len(self.occupants):
             return actions
-        state = self.match._state
-        full = [None] * len(self.occupants)
+        actions = np.asarray(actions)
+        full = np.zeros((len(self.occupants),) + actions.shape[1:], dtype=actions.dtype)
         for slot, i in enumerate(self.learning):
             full[i] = actions[slot]
+        state = self.match._state
         for i, occ in enumerate(self.occupants):
             if occ is None:
                 continue
             chosen = occ.act(state, i)
             full[i] = self.idle_action if chosen is None else chosen
-        return np.asarray(full)
+        return full
 
     def step(self, actions):
         if self.action_space_type != CONTINUOUS:

@@ -120,3 +120,35 @@ def dump_dict_to_debug_string(dictionary):
             debug_string = "{}{}: {}\n".format(debug_string, key, val)
 
     return debug_string
+
+
+def boxed_table(headers, rows):
+    """
+    A bordered table for console output.
+
+    Falls back to ASCII borders when the console cannot encode the box-drawing characters, which
+    a Windows terminal on a legacy code page cannot.
+    """
+    import sys
+
+    cells = [[str(c) for c in headers]] + [[str(c) for c in r] for r in rows]
+    widths = [max(len(row[i]) for row in cells) for i in range(len(headers))]
+
+    glyphs = "╭┬╮├┼┤╰┴╯─│"
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        glyphs.encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        glyphs = "+++++++++-|"
+    tl, tm, tr, ml, mm, mr, bl, bm, br, h, v = glyphs
+
+    def rule(left, mid, right):
+        return left + mid.join(h * (w + 2) for w in widths) + right
+
+    def line(row):
+        return v + " " + (" " + v + " ").join(c.ljust(w) for c, w in zip(row, widths)) + " " + v
+
+    out = [rule(tl, tm, tr), line(cells[0]), rule(ml, mm, mr)]
+    out += [line(r) for r in cells[1:]]
+    out.append(rule(bl, bm, br))
+    return "\n".join(out)
