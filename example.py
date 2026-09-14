@@ -64,11 +64,11 @@ def build_brawlgym_env(port):
                         port=port,
                         game_speed=0)
 
-    pretrained_agents = {BuiltInAgent(BOT_EASY): 0.05,
-                         BuiltInAgent(BOT_MEDIUM): 0.05,
-                         BuiltInAgent(BOT_HARD): 0.05,
-                         BuiltInAgent(BOT_EXTREME): 0.05,
-                         BuiltInAgent(BOT_CHOSEN): 0.05}
+    pretrained_agents = {BuiltInAgent(BOT_EASY): 0.025,
+                         BuiltInAgent(BOT_MEDIUM): 0.025,
+                         BuiltInAgent(BOT_HARD): 0.025,
+                         BuiltInAgent(BOT_EXTREME): 0.025,
+                         BuiltInAgent(BOT_CHOSEN): 0.025}
 
     return BrawlgymWrapper(env, pretrained_agents=pretrained_agents)
 
