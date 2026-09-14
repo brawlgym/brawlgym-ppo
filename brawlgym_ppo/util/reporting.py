@@ -73,13 +73,13 @@ def report_metrics(loggable_metrics, debug_metrics, wandb_run=None):
 
 
     # Print the loggable metrics in a desirable format to the console.
-    print("{}{}{}".format("-"*8, "BEGIN ITERATION REPORT", "-"*8))
+    print("\n\n{}{}{}".format("-"*8, "BEGIN ITERATION REPORT", "-"*8))
     groups = _form_printable_groups(loggable_metrics)
     out = ""
     for group in groups:
         out += dump_dict_to_debug_string(group) + "\n"
     print(out[:-2])
-    print("{}{}{}\n\n".format("-"*8, "END ITERATION REPORT", "-"*8))
+    print("{}{}{}\n".format("-"*8, "END ITERATION REPORT", "-"*8))
 
 def dump_dict_to_debug_string(dictionary):
     """

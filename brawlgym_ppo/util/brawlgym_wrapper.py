@@ -148,7 +148,7 @@ class BrawlgymWrapper(object):
         players = self.match._state.players
         rows = [[i, names[i], players[i].legend or "?", players[i].team]
                 for i in range(len(names))]
-        print("ROLLOUT on port %d\n%s"
+        print("\nROLLOUT on port %d\n%s"
               % (self.match.port, boxed_table(["Fighter", "Controller", "Legend", "Team"], rows)),
               flush=True)
 
